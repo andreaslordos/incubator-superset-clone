@@ -63,7 +63,7 @@ class ImportExportTests(SupersetTestCase):
         name,
         ds_id=None,
         id=None,
-        db_name="main",
+        db_name="examples",
         table_name="wb_health_population",
     ):
         params = {
@@ -102,7 +102,7 @@ class ImportExportTests(SupersetTestCase):
         )
 
     def create_table(self, name, schema="", id=0, cols_names=[], metric_names=[]):
-        params = {"remote_id": id, "database_name": "main"}
+        params = {"remote_id": id, "database_name": "examples"}
         table = SqlaTable(
             id=id, schema=schema, table_name=name, params=json.dumps(params)
         )
@@ -134,10 +134,6 @@ class ImportExportTests(SupersetTestCase):
 
     def get_dash(self, dash_id):
         return db.session.query(models.Dashboard).filter_by(id=dash_id).first()
-
-    def get_dash_by_slug(self, dash_slug):
-        sesh = db.session()
-        return sesh.query(models.Dashboard).filter_by(slug=dash_slug).first()
 
     def get_datasource(self, datasource_id):
         return db.session.query(DruidDatasource).filter_by(id=datasource_id).first()
@@ -192,9 +188,33 @@ class ImportExportTests(SupersetTestCase):
         self.assertEquals(expected_slc_name, actual_slc_name)
         self.assertEquals(expected_slc.datasource_type, actual_slc.datasource_type)
         self.assertEquals(expected_slc.viz_type, actual_slc.viz_type)
-        self.assertEquals(
-            json.loads(expected_slc.params), json.loads(actual_slc.params)
+        exp_params = json.loads(expected_slc.params)
+        actual_params = json.loads(actual_slc.params)
+        diff_params_keys = (
+            "schema",
+            "database_name",
+            "datasource_name",
+            "remote_id",
+            "import_time",
         )
+        for k in diff_params_keys:
+            if k in actual_params:
+                actual_params.pop(k)
+            if k in exp_params:
+                exp_params.pop(k)
+        self.assertEquals(exp_params, actual_params)
+
+    def assert_only_exported_slc_fields(self, expected_dash, actual_dash):
+        """ only exported json has this params
+            imported/created dashboard has relationships to other models instead
+        """
+        expected_slices = sorted(expected_dash.slices, key=lambda s: s.slice_name or "")
+        actual_slices = sorted(actual_dash.slices, key=lambda s: s.slice_name or "")
+        for e_slc, a_slc in zip(expected_slices, actual_slices):
+            params = a_slc.params_dict
+            self.assertEqual(e_slc.datasource.name, params["datasource_name"])
+            self.assertEqual(e_slc.datasource.schema, params["schema"])
+            self.assertEqual(e_slc.datasource.database.name, params["database_name"])
 
     def test_export_1_dashboard(self):
         self.login("admin")
@@ -208,6 +228,7 @@ class ImportExportTests(SupersetTestCase):
         )["dashboards"]
 
         birth_dash = self.get_dash_by_slug("births")
+        self.assert_only_exported_slc_fields(birth_dash, exported_dashboards[0])
         self.assert_dash_equals(birth_dash, exported_dashboards[0])
         self.assertEquals(
             birth_dash.id,
@@ -233,21 +254,23 @@ class ImportExportTests(SupersetTestCase):
             birth_dash.id, world_health_dash.id
         )
         resp = self.client.get(export_dash_url)
+        resp_data = json.loads(
+            resp.data.decode("utf-8"), object_hook=utils.decode_dashboards
+        )
         exported_dashboards = sorted(
-            json.loads(resp.data.decode("utf-8"), object_hook=utils.decode_dashboards)[
-                "dashboards"
-            ],
-            key=lambda d: d.dashboard_title,
+            resp_data.get("dashboards"), key=lambda d: d.dashboard_title
         )
         self.assertEquals(2, len(exported_dashboards))
 
         birth_dash = self.get_dash_by_slug("births")
+        self.assert_only_exported_slc_fields(birth_dash, exported_dashboards[0])
         self.assert_dash_equals(birth_dash, exported_dashboards[0])
         self.assertEquals(
             birth_dash.id, json.loads(exported_dashboards[0].json_metadata)["remote_id"]
         )
 
         world_health_dash = self.get_dash_by_slug("world_health")
+        self.assert_only_exported_slc_fields(world_health_dash, exported_dashboards[1])
         self.assert_dash_equals(world_health_dash, exported_dashboards[1])
         self.assertEquals(
             world_health_dash.id,
@@ -255,10 +278,7 @@ class ImportExportTests(SupersetTestCase):
         )
 
         exported_tables = sorted(
-            json.loads(resp.data.decode("utf-8"), object_hook=utils.decode_dashboards)[
-                "datasources"
-            ],
-            key=lambda t: t.table_name,
+            resp_data.get("datasources"), key=lambda t: t.table_name
         )
         self.assertEquals(2, len(exported_tables))
         self.assert_table_equals(
@@ -297,7 +317,7 @@ class ImportExportTests(SupersetTestCase):
         self.assertEquals(imported_slc_2.datasource.perm, imported_slc_2.perm)
 
     def test_import_slices_for_non_existent_table(self):
-        with self.assertRaises(IndexError):
+        with self.assertRaises(AttributeError):
             models.Slice.import_obj(
                 self.create_slice("Import Me 3", id=10004, table_name="non_existent"),
                 None,
@@ -447,7 +467,7 @@ class ImportExportTests(SupersetTestCase):
         imported = self.get_table(imported_id)
         self.assert_table_equals(table, imported)
         self.assertEquals(
-            {"remote_id": 10002, "import_time": 1990, "database_name": "main"},
+            {"remote_id": 10002, "import_time": 1990, "database_name": "examples"},
             json.loads(imported.params),
         )
 

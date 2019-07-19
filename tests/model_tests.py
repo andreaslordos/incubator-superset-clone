@@ -20,9 +20,9 @@ import unittest
 import pandas
 from sqlalchemy.engine.url import make_url
 
-from superset import app, db
+from superset import app
 from superset.models.core import Database
-from superset.utils.core import get_main_database, QueryStatus
+from superset.utils.core import get_example_database, get_main_database, QueryStatus
 from .base_tests import SupersetTestCase
 
 
@@ -101,7 +101,7 @@ class DatabaseModelTestCase(SupersetTestCase):
         self.assertNotEquals(example_user, user_name)
 
     def test_select_star(self):
-        main_db = get_main_database(db.session)
+        main_db = get_example_database()
         table_name = "energy_usage"
         sql = main_db.select_star(table_name, show_cols=False, latest_partition=False)
         expected = textwrap.dedent(
@@ -124,7 +124,7 @@ class DatabaseModelTestCase(SupersetTestCase):
         assert sql.startswith(expected)
 
     def test_single_statement(self):
-        main_db = get_main_database(db.session)
+        main_db = get_main_database()
 
         if main_db.backend == "mysql":
             df = main_db.get_df("SELECT 1", None)
@@ -134,7 +134,7 @@ class DatabaseModelTestCase(SupersetTestCase):
             self.assertEquals(df.iat[0, 0], 1)
 
     def test_multi_statement(self):
-        main_db = get_main_database(db.session)
+        main_db = get_main_database()
 
         if main_db.backend == "mysql":
             df = main_db.get_df("USE superset; SELECT 1", None)
@@ -262,13 +262,55 @@ class SqlaTableModelTestCase(SupersetTestCase):
             extras={},
         )
         sql = tbl.get_query_str(query_obj)
-        self.assertNotIn("--COMMENT", sql)
+        self.assertNotIn("-- COMMENT", sql)
 
         def mutator(*args):
-            return "--COMMENT\n" + args[0]
+            return "-- COMMENT\n" + args[0]
 
         app.config["SQL_QUERY_MUTATOR"] = mutator
         sql = tbl.get_query_str(query_obj)
-        self.assertIn("--COMMENT", sql)
+        self.assertIn("-- COMMENT", sql)
 
         app.config["SQL_QUERY_MUTATOR"] = None
+
+    def test_query_with_non_existent_metrics(self):
+        tbl = self.get_table_by_name("birth_names")
+
+        query_obj = dict(
+            groupby=[],
+            metrics=["invalid"],
+            filter=[],
+            is_timeseries=False,
+            columns=["name"],
+            granularity=None,
+            from_dttm=None,
+            to_dttm=None,
+            is_prequery=False,
+            extras={},
+        )
+
+        with self.assertRaises(Exception) as context:
+            tbl.get_query_str(query_obj)
+
+        self.assertTrue("Metric 'invalid' does not exist", context.exception)
+
+    def test_query_with_non_existent_filter_columns(self):
+        tbl = self.get_table_by_name("birth_names")
+
+        query_obj = dict(
+            groupby=[],
+            metrics=["count"],
+            filter=[{"col": "invalid", "op": "==", "val": "male"}],
+            is_timeseries=False,
+            columns=["name"],
+            granularity=None,
+            from_dttm=None,
+            to_dttm=None,
+            is_prequery=False,
+            extras={},
+        )
+
+        with self.assertRaises(Exception) as context:
+            tbl.get_query_str(query_obj)
+
+        self.assertTrue("Column 'invalid' does not exist", context.exception)
