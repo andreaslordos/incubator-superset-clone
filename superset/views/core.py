@@ -1967,14 +1967,13 @@ class Superset(BaseSupersetView):
         slice_ids = []
         slice_id_to_name = {}
         for value in positions.values():
-            if (
-                isinstance(value, dict)
-                and value.get("meta")
-                and value.get("meta").get("chartId")
-            ):
-                slice_id = value.get("meta").get("chartId")
-                slice_ids.append(slice_id)
-                slice_id_to_name[slice_id] = value.get("meta").get("sliceName")
+            if isinstance(value, dict):
+                try:
+                    slice_id = value["meta"]["chartId"]
+                    slice_ids.append(slice_id)
+                    slice_id_to_name[slice_id] = value["meta"]["sliceName"]
+                except KeyError:
+                    pass
 
         session = db.session()
         Slice = models.Slice  # noqa
@@ -1983,12 +1982,16 @@ class Superset(BaseSupersetView):
         dashboard.slices = current_slices
 
         # update slice names. this assumes user has permissions to update the slice
+        # we allow user set slice name be empty string
         for slc in dashboard.slices:
-            new_name = slice_id_to_name[slc.id]
-            if slc.slice_name != new_name:
-                slc.slice_name = new_name
-                session.merge(slc)
-                session.flush()
+            try:
+                new_name = slice_id_to_name[slc.id]
+                if slc.slice_name != new_name:
+                    slc.slice_name = new_name
+                    session.merge(slc)
+                    session.flush()
+            except KeyError:
+                pass
 
         # remove leading and trailing white spaces in the dumped json
         dashboard.position_json = json.dumps(
@@ -2633,7 +2636,7 @@ class Superset(BaseSupersetView):
         table.columns = cols
         table.metrics = [SqlMetric(metric_name="count", expression="count(*)")]
         db.session.commit()
-        return self.json_response(json.dumps({"table_id": table.id}))
+        return json_success(json.dumps({"table_id": table.id}))
 
     @has_access
     @expose("/table/<database_id>/<table_name>/<schema>/")
