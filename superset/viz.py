@@ -1835,6 +1835,31 @@ class FilterBoxViz(BaseViz):
         return d
 
 
+class FunnelChartViz(BaseViz):
+
+    """Please work"""
+
+    viz_type = "funnel"
+    verbose_name = _("Funnel Chart Visualization")
+    is_timeseries = False
+
+    def get_data(self, df):
+        f2=open("funnel_log.txt","w")
+        metric = self.metric_labels[0]
+        f2.write("metric: "+str(metric)+"\n")
+        df = df.pivot_table(index=self.groupby, values=[metric], dropna=False)
+        f2.write("raw df: "+str(df)+"\n")
+        df.sort_values(by=metric, ascending=False, inplace=True)
+        f2.write("df sorted: "+str(df)+"\n")
+        df = df.reset_index()
+        f2.write("df reset index: "+str(df)+"\n")
+        df.columns = ["label", "value"]
+        f2.write("df final w/columns: "+str(df)+"\n")
+        f2.write("Final return: "+str(df.to_dict(orient="records")))
+        f2.close()
+        return df.to_dict(orient="records")
+
+
 class IFrameViz(BaseViz):
 
     """You can squeeze just about anything in this iFrame component"""
