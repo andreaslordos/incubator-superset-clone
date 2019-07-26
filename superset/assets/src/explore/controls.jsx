@@ -2491,7 +2491,7 @@ export const controls = {
 
   curve_enabled: {
     type: 'CheckboxControl',
-    label: 'Curve enabled?',
+    label: 'Curve Enabled',
     description: t('Check if the chart should be curved'),
     renderTrigger: true,
     default: false,
@@ -2506,8 +2506,6 @@ export const controls = {
       ['{l}: {f}', 'Category and Value'],
       ['{l}', 'Category Name'],
       ['{f}', 'Value'],
-      ['{p}', 'Percentage'],
-      ['{l}: {p}', 'Category and Percentage'],
     ],
     description: t('What should be shown on the label of each block?'),
   },
