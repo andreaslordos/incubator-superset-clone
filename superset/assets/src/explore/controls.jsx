@@ -2406,5 +2406,130 @@ export const controls = {
     description: t('Whether to normalize the histogram'),
     default: false,
   },
+
+  dynamic_height: {
+    type: 'CheckboxControl',
+    label: 'Dynamic Height',
+    description: t('Dynamic height of section according to ratios'),
+    renderTrigger: true,
+    default: true,
+  },
+
+  dynamic_slope: {
+    type: 'CheckboxControl',
+    label: 'Dynamic Slope',
+    description: t('Dynamic slope of section according to ratios'),
+    renderTrigger: true,
+    default: true,
+  },
+
+  fill_type: {
+    type: 'CheckboxControl',
+    label: 'Gradient',
+    description: t('Check if the chart should have a gradient fill'),
+    renderTrigger: true,
+    default: true,
+  },
+
+  inverted: {
+    type: 'CheckboxControl',
+    label: 'Inverted',
+    description: t('Check if the chart should be inverted (point upwards)'),
+    renderTrigger: true,
+    default: false,
+  },
+
+  highlight: {
+    type: 'CheckboxControl',
+    label: 'Highlight',
+    description: t('Highlight blocks on hover'),
+    renderTrigger: true,
+    default: true,
+  },
+
+  bottom_pinch: {
+    type: 'TextControl',
+    label: t('Bottom Pinch'),
+    isFloat: false,
+    renderTrigger: true,
+    default: 1,
+    validators: [v.integer],
+    description: t('Bottom pinch'),
+  },
+
+  min_height: {
+    type: 'TextControl',
+    label: t('Minimum Section Height'),
+    isFloat: false,
+    default: 5,
+    validators: [v.integer],
+    renderTrigger: true,
+    description: t('Minimum height for a section'),
+  },
+
+  font_size: {
+    type: 'TextControl',
+    label: t('Font size'),
+    isFloat: false,
+    default: 14,
+    validators: [v.integer],
+    renderTrigger: true,
+    description:
+      t('Font size of text'),
+  },
+
+  curve_height: {
+    type: 'TextControl',
+    label: t('Curve Height'),
+    isFloat: false,
+    default: 15,
+    validators: [v.integer],
+    renderTrigger: true,
+    description:
+      t('Height of curve'),
+  },
+
+  curve_enabled: {
+    type: 'CheckboxControl',
+    label: 'Curve Enabled',
+    description: t('Check if the chart should be curved'),
+    renderTrigger: true,
+    default: false,
+  },
+
+  label_format: {
+    type: 'SelectControl',
+    label: t('Label Format'),
+    default: '{l}: {f}',
+    renderTrigger: true,
+    choices: [
+      ['{l}: {f}', 'Category and Value'],
+      ['{l}', 'Category Name'],
+      ['{f}', 'Value'],
+    ],
+    description: t('What should be shown on the label of each block?'),
+  },
+
+  tooltip_enabled: {
+    type: 'CheckboxControl',
+    label: t('Tooltip Enabled'),
+    default: true,
+    renderTrigger: true,
+    description: t('Enable tooltip label on hover'),
+  },
+
+  tooltip_format: {
+    type: 'SelectControl',
+    label: t('Tooltip Format'),
+    default: '{l}: {f}',
+    renderTrigger: true,
+    choices: [
+      ['{l}: {f}', 'Category and Value'],
+      ['{l}', 'Category Name'],
+      ['{f}', 'Value'],
+    ],
+    description: t('What should be shown on the pop-up label on hover?'),
+  },
+
 };
 export default controls;

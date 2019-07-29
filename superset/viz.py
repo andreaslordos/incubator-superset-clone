@@ -1079,7 +1079,8 @@ class NVD3TimeSeriesViz(NVD3Viz):
     verbose_name = _("Time Series - Line Chart")
     sort_series = False
     is_timeseries = True
-
+    global f
+    f=open("area_log.txt","w")
     def to_series(self, df, classed="", title_suffix=""):
         cols = []
         for col in df.columns:
@@ -1091,7 +1092,7 @@ class NVD3TimeSeriesViz(NVD3Viz):
                 cols.append(col)
         df.columns = cols
         series = df.to_dict("series")
-
+        f.write("series "+str(series)+"\n")
         chart_data = []
         for name in df.T.index.tolist():
             ys = series[name]
@@ -1115,7 +1116,7 @@ class NVD3TimeSeriesViz(NVD3Viz):
                     series_title = (series_title, title_suffix)
                 elif isinstance(series_title, (list, tuple)):
                     series_title = series_title + (title_suffix,)
-
+            f.write("series_title: "+series_title+"\n")
             values = []
             non_nan_cnt = 0
             for ds in df.index:
@@ -1129,18 +1130,20 @@ class NVD3TimeSeriesViz(NVD3Viz):
 
             if non_nan_cnt == 0:
                 continue
-
+            f.write("values: "+str(values)+"\n")
             d = {"key": series_title, "values": values}
             if classed:
                 d["classed"] = classed
             chart_data.append(d)
+            f.write("chart_data: "+str(chart_data)+"\n")
         return chart_data
 
     def process_data(self, df, aggregate=False):
         fd = self.form_data
+        f.write("fd: "+str(fd)+"\n")
         if fd.get("granularity") == "all":
             raise Exception(_("Pick a time granularity for your time series"))
-
+        f.write("aggregate: "+str(aggregate)+"\n")
         if aggregate:
             df = df.pivot_table(
                 index=DTTM_ALIAS,
@@ -1157,7 +1160,6 @@ class NVD3TimeSeriesViz(NVD3Viz):
                 values=self.metric_labels,
                 dropna=False,
             )
-
         rule = fd.get("resample_rule")
         method = fd.get("resample_method")
 
@@ -1190,10 +1192,12 @@ class NVD3TimeSeriesViz(NVD3Viz):
             dft = df.T
             df = (dft / dft.sum()).T
 
+        f.write("df: "+str(df)+"\n")
         return df
 
     def run_extra_queries(self):
         fd = self.form_data
+        f.write("Running extra query with fd: "+str(fd)+"\n")
 
         time_compare = fd.get("time_compare") or []
         # backwards compatibility
@@ -1201,6 +1205,7 @@ class NVD3TimeSeriesViz(NVD3Viz):
             time_compare = [time_compare]
 
         for option in time_compare:
+            f.write("option: "+str(option)+"\n")
             query_object = self.query_obj()
             delta = utils.parse_past_timedelta(option)
             query_object["inner_from_dttm"] = query_object["from_dttm"]
@@ -1225,8 +1230,11 @@ class NVD3TimeSeriesViz(NVD3Viz):
 
     def get_data(self, df):
         fd = self.form_data
+        f.write("in get_data(), fd: "+str(fd)+"\n")
         comparison_type = fd.get("comparison_type") or "values"
+        f.write("in get_data(), comparison_type: "+str(comparison_type)+"\n")
         df = self.process_data(df)
+        f.write("in get_data(), df: "+str(df)+"\n")
         if comparison_type == "values":
             # Filter out series with all NaN
             chart_data = self.to_series(df.dropna(axis=1, how="all"))
@@ -1270,6 +1278,7 @@ class NVD3TimeSeriesViz(NVD3Viz):
 
         if not self.sort_series:
             chart_data = sorted(chart_data, key=lambda x: tuple(x["key"]))
+        f.write("chart_data: "+str(chart_data)+"\n")
         return chart_data
 
 
@@ -1833,6 +1842,31 @@ class FilterBoxViz(BaseViz):
                     {"id": row[0], "text": row[0]} for row in df.itertuples(index=False)
                 ]
         return d
+
+
+class FunnelChartViz(BaseViz):
+
+    """Please work"""
+
+    viz_type = "funnel"
+    verbose_name = _("Funnel Chart Visualization")
+    is_timeseries = False
+
+    def get_data(self, df):
+        f2=open("funnel_log.txt","w")
+        metric = self.metric_labels[0]
+        f2.write("metric: "+str(metric)+"\n")
+        df = df.pivot_table(index=self.groupby, values=[metric], dropna=False)
+        f2.write("raw df: "+str(df)+"\n")
+        df.sort_values(by=metric, ascending=False, inplace=True)
+        f2.write("df sorted: "+str(df)+"\n")
+        df = df.reset_index()
+        f2.write("df reset index: "+str(df)+"\n")
+        df.columns = ["label", "value"]
+        f2.write("df final w/columns: "+str(df)+"\n")
+        f2.write("Final return: "+str(df.to_dict(orient="records")))
+        f2.close()
+        return df.to_dict(orient="records")
 
 
 class IFrameViz(BaseViz):

@@ -23,6 +23,7 @@ import ChordChartPlugin from '@superset-ui/legacy-plugin-chart-chord';
 import CountryMapChartPlugin from '@superset-ui/legacy-plugin-chart-country-map';
 import EventFlowChartPlugin from '@superset-ui/legacy-plugin-chart-event-flow';
 import ForceDirectedChartPlugin from '@superset-ui/legacy-plugin-chart-force-directed';
+import FunnelChartPlugin from '@superset-ui/legacy-plugin-chart-funnel';
 import HeatmapChartPlugin from '@superset-ui/legacy-plugin-chart-heatmap';
 import HistogramChartPlugin from '@superset-ui/legacy-plugin-chart-histogram';
 import HorizonChartPlugin from '@superset-ui/legacy-plugin-chart-horizon';
@@ -78,6 +79,7 @@ export default class MainPreset extends Preset {
         new EventFlowChartPlugin().configure({ key: 'event_flow' }),
         new FilterBoxChartPlugin().configure({ key: 'filter_box' }),
         new ForceDirectedChartPlugin().configure({ key: 'directed_force' }),
+	      new FunnelChartPlugin().configure({ key: 'funnel' }),
         new HeatmapChartPlugin().configure({ key: 'heatmap' }),
         new HistogramChartPlugin().configure({ key: 'histogram' }),
         new HorizonChartPlugin().configure({ key: 'horizon' }),
