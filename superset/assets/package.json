@@ -57,7 +57,6 @@
     "@superset-ui/legacy-plugin-chart-country-map": "^0.10.11",
     "@superset-ui/legacy-plugin-chart-event-flow": "^0.10.11",
     "@superset-ui/legacy-plugin-chart-force-directed": "^0.10.11",
-    "@superset-ui/legacy-plugin-chart-funnel": "file:../../../superset-ui-plugins/packages/superset-ui-legacy-plugin-chart-funnel",
     "@superset-ui/legacy-plugin-chart-heatmap": "^0.10.34",
     "@superset-ui/legacy-plugin-chart-histogram": "^0.10.11",
     "@superset-ui/legacy-plugin-chart-horizon": "^0.10.11",
@@ -142,6 +141,7 @@
     "redux-thunk": "^2.1.0",
     "redux-undo": "^1.0.0-beta9-9-7",
     "shortid": "^2.2.6",
+    "superset-funnel-plugin": "^0.11.11",
     "underscore": "^1.8.3",
     "urijs": "^1.18.10",
     "viewport-mercator-project": "^6.1.1"

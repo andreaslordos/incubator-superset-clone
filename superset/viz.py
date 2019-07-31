@@ -1116,7 +1116,7 @@ class NVD3TimeSeriesViz(NVD3Viz):
                     series_title = (series_title, title_suffix)
                 elif isinstance(series_title, (list, tuple)):
                     series_title = series_title + (title_suffix,)
-            f.write("series_title: "+series_title+"\n")
+                    f.write("series_title: "+str(series_title)+"\n")
             values = []
             non_nan_cnt = 0
             for ds in df.index:
@@ -1846,28 +1846,44 @@ class FilterBoxViz(BaseViz):
 
 class FunnelChartViz(BaseViz):
 
-    """Please work"""
-
     viz_type = "funnel"
     verbose_name = _("Funnel Chart Visualization")
     is_timeseries = False
 
-    def get_data(self, df):
-        f2=open("funnel_log.txt","w")
-        metric = self.metric_labels[0]
-        f2.write("metric: "+str(metric)+"\n")
-        df = df.pivot_table(index=self.groupby, values=[metric], dropna=False)
-        f2.write("raw df: "+str(df)+"\n")
-        df.sort_values(by=metric, ascending=False, inplace=True)
-        f2.write("df sorted: "+str(df)+"\n")
-        df = df.reset_index()
-        f2.write("df reset index: "+str(df)+"\n")
-        df.columns = ["label", "value"]
-        f2.write("df final w/columns: "+str(df)+"\n")
-        f2.write("Final return: "+str(df.to_dict(orient="records")))
-        f2.close()
-        return df.to_dict(orient="records")
 
+    def query_obj(self):
+        d = super().query_obj()
+        metrics = self.form_data.get("metrics")
+        groups = self.form_data.get("groupby")
+        if len(groups)>1:
+            raise Exception(_("Error (too many groups): Please choose either one or zero groups."))
+        if not metrics:
+            raise Exception(_("Please choose at least one metric"))
+        return d
+
+    def get_data(self, df):
+        fd = self.form_data
+        #f2=open("funnel_log.txt","w")
+        metrics = self.metric_labels
+        groups = fd.get("groupby") #one group only
+        #f2.write("raw df: "+str(df)+"\n \n")
+        #f2.write("groups: "+str(groups)+"\n \n")
+        #f2.write("groups: "+str(metrics)+"\n \n")
+        if groups == []:
+            temp = {'label': [], 'value': []}
+            for key in df:
+                temp['label'].append(key)
+                temp['value'].append(df[key][0])
+            df = pd.DataFrame(temp)
+            df = df.sort_values(by='value',ascending=False)
+            df = df.to_dict(orient="records")
+            return df
+        elif len(groups)==len(metrics)==1: #1 group & 1 metric
+            df = df.pivot_table(index=groups, values=metrics, dropna=False)
+            df.sort_values(by=metrics[0], ascending=False, inplace=True)
+            df = df.reset_index()
+            df.columns = ["label", "value"]
+            return df.to_dict(orient="records")
 
 class IFrameViz(BaseViz):
 
